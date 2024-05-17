@@ -1,0 +1,69 @@
+#include <linux/module.h>
+#include <linux/kernel.h>
+
+// Define process and resource structures
+struct process {
+    int pid;
+    bool holding_resource;
+    struct list_head wait_list; // List of resources waiting for
+};
+
+struct resource {
+    int rid;
+    bool allocated;
+    struct list_head wait_list; // List of processes waiting for
+};
+
+// Define global lists for processes and resources
+LIST_HEAD(process_list);
+LIST_HEAD(resource_list);
+
+// Function to allocate resource to a process
+void allocate_resource(struct process *proc, struct resource *res) {
+    if (!res->allocated) {
+        res->allocated = true;
+        proc->holding_resource = true;
+    } else {
+        // Add process to resource's wait list
+        list_add_tail(&proc->wait_list, &res->wait_list);
+    }
+}
+
+// Function to release resource held by a process
+void release_resource(struct process *proc, struct resource *res) {
+    res->allocated = false;
+    proc->holding_resource = false;
+    // Check if there are processes waiting for this resource
+    if (!list_empty(&res->wait_list)) {
+        // Allocate the resource to the first waiting process
+        struct process *waiting_proc = list_first_entry(&res->wait_list, struct process, wait_list);
+        allocate_resource(waiting_proc, res);
+        // Remove the process from the wait list
+        list_del(&waiting_proc->wait_list);
+    }
+}
+
+// Function to simulate process interactions
+void simulate_interactions() {
+    // Simulate process interactions here
+}
+
+static int __init deadlock_detector_init(void) {
+    // Initialize processes and resources
+    // Simulate interactions to allocate and release resources
+    simulate_interactions();
+    printk(KERN_INFO "Deadlock Detector module initialized\n");
+    return 0;
+}
+
+static void __exit deadlock_detector_exit(void) {
+    printk(KERN_INFO "Deadlock Detector module exited\n");
+}
+
+module_init(deadlock_detector_init);
+module_exit(deadlock_detector_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("m7mdsayied");
+MODULE_DESCRIPTION("Kernel Deadlock Detector");
+
